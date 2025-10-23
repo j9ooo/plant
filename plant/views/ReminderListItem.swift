@@ -1,94 +1,108 @@
-import SwiftUI
-import Foundation
+internal import SwiftUI
 
 struct ReminderListItem: View {
+    
+    // 1. بيانات التذكير لعرضها (Model)
     let item: ReminderItem
+    let id: UUID = UUID()
+    // 2. دالة العمل لتنفيذ المنطق في ViewModel
+    // هذه الـ closure يتم استدعاؤها عندما يضغط المستخدم على علامة الصح
     let toggleAction: () -> Void
-
+    
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Leading icon
-            ZStack {
-                Circle()
-                    .fill(Color("geeen1").opacity(0.2))
-                    .frame(width: 40, height: 40)
-                Image(systemName: "leaf")
-                    .foregroundColor(Color("geeen1"))
-            }
-
-            // Main content
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(item.name)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    Spacer()
-                }
-
-                // Secondary details line
-                HStack(spacing: 8) {
-                    Label(item.location, systemImage: "location")
-                    Label(item.light, systemImage: "sun.max")
-                    Label(item.waterAmount, systemImage: "drop")
-                }
-                .font(.caption)
-                .foregroundColor(.gray)
-
-                // Optional watering schedule
-                Text(item.wateringDays)
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-            }
-
-            Spacer()
-
-            // Checkmark toggle
+        HStack {
+            
+            // زر علامة الصح (Checkmark)
             Button(action: toggleAction) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundColor(item.isChecked ? Color("geeen1") : .gray)
-                    .frame(width: 32, height: 32)
+                    .font(.title2)
+                    .foregroundColor(item.isChecked ? Color("geeen1") : .gray) // لونك المخصص
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plain) // لضمان أن الزر يعمل بشكل صحيح داخل الـ List
+            
+            VStack(alignment: .leading, spacing: 4) {
+                
+                // اسم النبتة
+                Text(item.name)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .strikethrough(item.isChecked)
+                
+                HStack(spacing: 12) {
+                    
+                    // أيقونة الغرفة
+                    HStack(spacing: 4) {
+                        Image(systemName: "location.fill")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Text(item.location)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    // أيقونة الإضاءة
+                    HStack(spacing: 4) {
+                        Image(systemName: "sun.max.fill")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        Text(item.light)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // كمية الماء (معرضة في مربع أسود)
+            Text(item.waterAmount)
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.black.opacity(0.6))
+                .cornerRadius(6)
         }
-        .padding(.vertical, 10)
-        .contentShape(Rectangle()) // improves tap target when wrapped in a Button
+        .padding(.vertical, 8)
     }
 }
+
+// ----------------------------------------------------
+// Preview
+// ----------------------------------------------------
 
 struct ReminderListItem_Previews: PreviewProvider {
     static var previews: some View {
         Group {
+            // تذكير غير مكتمل
+            ReminderListItem(
+                item: ReminderItem(
+                    name: "Monstera",
+                    location: "in Living Room",
+                    light: "Partial sun",
+                    waterAmount: "50-100 ml",
+                    wateringDays: "Once a week",
+                    isChecked: false
+                ),
+                toggleAction: {} // دالة فارغة للمعاينة
+            )
+            .previewLayout(.sizeThatFits)
+            
+            // تذكير مكتمل
             ReminderListItem(
                 item: ReminderItem(
                     name: "Pothos",
                     location: "in Bedroom",
                     light: "Full sun",
-                    waterAmount: "50-100 ml",
-                    wateringDays: "Once a week",
-                    isChecked: false
-                ),
-                toggleAction: {}
-            )
-            .padding()
-            .background(Color.black)
-            .previewDisplayName("Unchecked")
-
-            ReminderListItem(
-                item: ReminderItem(
-                    name: "Snake Plant",
-                    location: "in Office",
-                    light: "Shade",
                     waterAmount: "20-50 ml",
-                    wateringDays: "Every 2 days",
+                    wateringDays: "Every day",
                     isChecked: true
                 ),
                 toggleAction: {}
             )
-            .padding()
-            .background(Color.black)
-            .previewDisplayName("Checked")
+            .previewLayout(.sizeThatFits)
         }
-        .preferredColorScheme(.dark)
+        .padding()
+        .background(Color.black)
     }
 }

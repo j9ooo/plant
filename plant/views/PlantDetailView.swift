@@ -1,5 +1,4 @@
-import SwiftUI
-import Foundation
+internal import SwiftUI
 
 struct PlantDetailView: View {
     @Environment(\.dismiss) var dismiss
@@ -15,21 +14,21 @@ struct PlantDetailView: View {
     @State private var plantName: String
     @State private var selectedRoom: String
     @State private var selectedLight: String
-    @State private var wateringDays: String // تم تعريفها هنا
+    @State private var wateringDays: String
     @State private var selectedWaterAmount: String
     
-    @State private var showDeleteAlert = false
+    // تحكم بالتركيز لضمان أن TextField يقبل الإدخال
+    @FocusState private var nameFocused: Bool
     
+    // دالة التهيئة (Initializer) لضبط قيم الـ State الأولية
     init(reminders: Binding<[ReminderItem]>, reminder: Binding<ReminderItem>) {
         self._reminders = reminders
         self._reminder = reminder
         
         self._plantName = State(initialValue: reminder.wrappedValue.name)
-        // تصحيح لاستخراج اسم الغرفة بدون "in "
         let roomName = reminder.wrappedValue.location.replacingOccurrences(of: "in ", with: "")
         self._selectedRoom = State(initialValue: roomName)
         self._selectedLight = State(initialValue: reminder.wrappedValue.light)
-        // ✅ تصحيح: قراءة قيمة wateringDays من الكائن الحالي
         self._wateringDays = State(initialValue: reminder.wrappedValue.wateringDays)
         self._selectedWaterAmount = State(initialValue: reminder.wrappedValue.waterAmount)
     }
@@ -40,19 +39,22 @@ struct PlantDetailView: View {
             reminders[index].location = "in \(selectedRoom)"
             reminders[index].light = selectedLight
             reminders[index].waterAmount = selectedWaterAmount
-            // تحديث خاصية wateringDays عند الحفظ
             reminders[index].wateringDays = wateringDays
         }
     }
     
     func deleteReminder() {
         reminders.removeAll { $0.id == reminder.id }
+        // يجب إغلاق الشاشة بعد الحذف
         dismiss()
     }
     
     var body: some View {
         ZStack {
-            Color.clear.edgesIgnoringSafeArea(.all)
+            // بديل لا يلتقط اللمسات
+            Color.clear
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             
             Form {
                 HStack {
@@ -60,7 +62,8 @@ struct PlantDetailView: View {
                     Spacer()
                     TextField("Pothos", text: $plantName)
                         .multilineTextAlignment(.trailing)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
+                        .focused($nameFocused) // ربط التركيز
                 }
                 
                 Section {
@@ -108,7 +111,8 @@ struct PlantDetailView: View {
                 }
                 
                 Section {
-                    Button("Delete Plant") {
+                    // زر الحذف
+                    Button("Delete Plant", role: .destructive) { // استخدام role .destructive لإظهار اللون الأحمر بشكل صحيح
                         deleteReminder()
                     }
                     .foregroundColor(.red)
@@ -121,21 +125,13 @@ struct PlantDetailView: View {
             
             // زر الإغلاق (X)
             ToolbarItem(placement: .topBarLeading) {
-                Button(action: { dismiss() }) {
+                Button(action: { dismiss() }) { // ✅ إغلاق الشاشة
                     Image(systemName: "xmark")
                         .font(.title3.weight(.medium))
                         .foregroundColor(.white)
-                        .padding(8)
-                        .background(
-                            ZStack {
-                                Circle().fill(.ultraThinMaterial)
-                                Circle().fill(Color("geeen1").opacity(0.4)) // لونك المخصص
-                            }
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color("green1").opacity(0.8), lineWidth: 2)
-                        )
+                        .padding(5)
+                        .background(ZStack { Circle().fill(.ultraThinMaterial); Circle().fill(Color("geeen1").opacity(0.4)) })
+                        .overlay(Circle().stroke(Color("green1").opacity(0.8), lineWidth: 2))
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
                 }
             }
@@ -144,42 +140,39 @@ struct PlantDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     saveChanges()
-                    dismiss()
+                    dismiss() // ✅ إغلاق الشاشة بعد الحفظ
                 }) {
                     Image(systemName: "checkmark")
                         .font(.title3.weight(.medium))
                         .foregroundColor(.white)
-                        .padding(8)
-                        .background(
-                            ZStack {
-                                Circle().fill(.ultraThinMaterial)
-                                Circle().fill(Color("geeen1").opacity(0.4)) // لونك المخصص
-                            }
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color("green1").opacity(0.8), lineWidth: 2)
-                        )
+                        .padding(5)
+                        .background(ZStack { Circle().fill(.ultraThinMaterial); Circle().fill(Color("geeen1").opacity(0.4)) })
+                        .overlay(Circle().stroke(Color("green1").opacity(0.8), lineWidth: 2))
                         .shadow(color: Color.black.opacity(0.3), radius: 5, x: 0, y: 3)
                 }
+                .disabled(plantName.isEmpty)
+            }
+        }
+        .onAppear {
+            // تفعيل التركيز تلقائياً عند الظهور (اختياري)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                nameFocused = true
             }
         }
     }
 }
 
-
-// ------------------------------------------
-// ✅ تصحيح أخطاء الـ Preview
+// Preview Container
 private struct PlantDetailViewPreviewContainer: View {
-    // يجب تمرير قيمة لـ wateringDays لتجنب خطأ الاستدعاء
     @State private var dummyReminders: [ReminderItem] = [
         ReminderItem(name: "Pothos", location: "in Bedroom", light: "Full sun", waterAmount: "20-50 ml", wateringDays: "Every day")
     ]
     
     var body: some View {
         if let index = dummyReminders.indices.first {
-            // ✅ تمرير الـ Binding بشكل سليم ($)
-            PlantDetailView(reminders: $dummyReminders, reminder: $dummyReminders[index])
+            NavigationStack {
+                PlantDetailView(reminders: $dummyReminders, reminder: $dummyReminders[index])
+            }
         } else {
             Text("No reminders")
         }
@@ -187,7 +180,5 @@ private struct PlantDetailViewPreviewContainer: View {
 }
 
 #Preview {
-    NavigationStack {
-        PlantDetailViewPreviewContainer()
-    }
+    PlantDetailViewPreviewContainer()
 }

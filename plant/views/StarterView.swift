@@ -1,12 +1,16 @@
-import SwiftUI
+internal import SwiftUI
 import Foundation
 
 struct StarterView: View {
     
-    @State private var starterReminders: [ReminderItem] = []
+    // If you don't need to keep a local list, you can remove this entirely.
+    // @State private var starterReminders: [ReminderItem] = []
     
     @State private var isShowingSetReminderSheet = false
     @State private var navigateToTodayView = false
+    
+    // Provide the view model that TodayReminderView expects
+    @StateObject private var viewModel = ReminderListViewModel()
     
     var body: some View {
         
@@ -37,31 +41,32 @@ struct StarterView: View {
                     }) {
                         Image(systemName: "plus")
                             .font(.title2)
-                        
                             .foregroundColor(.white)
                             .frame(width: 56, height: 56)
-                            .background(Color.geeen1)
+                            // If you don't have a Color extension for .geeen1, replace with Color("geeen1")
+                            .background(Color("geeen1"))
                             .clipShape(Circle())
                             .shadow(radius: 5)
                             .padding(.trailing, -290)
                             .padding(.vertical, 40)
-                        .padding(.leading,190)
+                            .padding(.leading,190)
                     }
-                    
                     .buttonStyle(.plain)
-                    
-                    
                 }
             }
             .preferredColorScheme(.dark)
             
-            .navigationDestination(isPresented: $navigateToTodayView) {
-                TodayReminderView(reminders: $starterReminders)
+            NavigationLink(destination: TodayReminderView(viewModel: viewModel)) {
+                // You can add a visible label here if desired
+                EmptyView()
             }
+            .hidden() // Keep it hidden if you only navigate programmatically
             
             .sheet(isPresented: $isShowingSetReminderSheet) {
                 SetReminderView(
-                    reminders: $starterReminders,
+                    onSave: { newItem in
+                        viewModel.addReminder(newItem)
+                    },
                     shouldNavigateToTodayView: $navigateToTodayView
                 )
             }
